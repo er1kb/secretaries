@@ -1,12 +1,25 @@
 # Dependencies
-[Polars](https://www.pola.rs/)
-[Transformers](https://huggingface.co/docs/transformers/index)
-[Tensorflow](https://www.tensorflow.org/)
+Tested with:  
+* [Polars](https://www.pola.rs/) >= 0.19.2
+* [Transformers](https://huggingface.co/docs/transformers/index) >= 4.33.1
+* [Tensorflow](https://www.tensorflow.org/) >= 2.13.0
 
 # Installation
+
+## From PyPI
 ```
-python -m pip install secretaries
+python3 -m pip install secretaries
 ```
+
+## From Github
+```
+pip3 install git+https://github.com/er1kb/secretaries
+```
+or clone and install locally:
+```
+git clone https://github.com/er1kb/secretaries.git && cd secretaries && pip3 install .
+```
+
 
 # English
 
@@ -50,7 +63,7 @@ Masking tokens can consist of one or several words. These tokens will be hidden 
 ### A single, short text
 ```
 from secretary import secretary as s
-t t = s.run(text = "Joe Biden and Donald Trump are the two most recent presidents of the United States.", lang = "English")
+t = s.run(text = "Joe Biden and Donald Trump are the two most recent presidents of the United States.", lang = "English")
 print(t)
 ```
 ```
