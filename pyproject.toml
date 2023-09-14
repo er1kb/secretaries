@@ -6,8 +6,8 @@ build-backend = "hatchling.build"
 packages = ["src/secretary"]
 
 [project]
-name = "py-secretary"
-version = "0.0.1"
+name = "secretaries"
+version = "0.0.1.1"
 license = "MIT"
 authors = [
   { name="Erik Broman", email="mikroberna@gmail.com" },

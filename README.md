@@ -5,7 +5,7 @@
 
 # Installation
 ```
-python -m pip install py-secretary
+python -m pip install secretaries
 ```
 
 # English
