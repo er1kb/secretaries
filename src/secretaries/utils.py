@@ -25,7 +25,7 @@ def init_folders(wd, lang, tags):
         if not os.path.exists(f):
             os.mkdir(f)
     if copy_starter_kit:
-        with as_file(files('secretary').joinpath(starter_kits[lang] + '.csv')) as starter_kit:
+        with as_file(files('secretaries').joinpath(starter_kits[lang] + '.csv')) as starter_kit:
             shutil.copy(starter_kit, os.path.join(non_names_folder, starter_kits[lang] + '.csv'))
     return(tuple(folders))
 

@@ -1,7 +1,7 @@
 # Dependencies
 Tested with:  
 * [Python](https://www.python.org/) 3.9
-* [Polars](https://www.pola.rs/) >= 0.19.2
+* [Polars](https://github.com/pola-rs/polars) >= 0.19.2
 * [Transformers](https://huggingface.co/docs/transformers/index) >= 4.33.1
 * [Tensorflow](https://www.tensorflow.org/) >= 2.13.0
 
@@ -46,7 +46,7 @@ To begin with, you can get good enough results by just running the NER part of t
 The first time you run the main function, a language specific input folder will be created in your working directory (ie where you are running the code), along with three subfolders. Each subfolder can contain any number of csv files. Each csv file contains a column named "token" and then has one token or phrase per row. If a subfolder contains multiple files, remember that all of these need to contain the "token" column in order to be combined when you run the model. 
 
 #### Names
-This is where you put words that are definitely names, irrespective of context. They will be added to the corpus search and replace, unless already present in the pre-loaded corpus. 
+This is where you put words that are definitely names, irrespective of context. They will be added to the corpus search and replace (ie substitution by spelling), unless already present in the pre-loaded corpus. 
 
 #### Ambiguous
 Some words may or may not be names. Names that are ambiguous need to be inferred from the surrounding context, which is something that Named Entity Recognition does well. Consider the sentences "He is my best friend" and "His name is George Best". If "best" is hidden from the corpus search and replace, the first instance will be untouched, while the actual name in the second sentence will still be detected using NER.
