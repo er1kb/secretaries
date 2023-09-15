@@ -1,6 +1,6 @@
 tags_default = {
     'split_token': '[[split]]',
-    'linebreak_placeholder': 'linebreak_placeholder',
+    'linebreak_placeholder': ',linebreak_placeholder,',
         'corpus_names': 'names_corpus',
         'regex_names': 'names_regex',
         'split': 'data_split',

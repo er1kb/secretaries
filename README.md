@@ -9,7 +9,7 @@ Tested with:
 
 ## From PyPI
 ```
-python3 -m pip install secretaries
+2ython3 -m pip install secretaries
 ```
 
 ## From Github
