@@ -7,10 +7,6 @@ Tested with:
 
 # Installation
 
-## From PyPI
-```
-2ython3 -m pip install secretaries
-```
 
 ## From Github
 ```
@@ -19,6 +15,11 @@ pip3 install git+https://github.com/er1kb/secretaries
 or clone and install locally:
 ```
 git clone https://github.com/er1kb/secretaries.git && cd secretaries && pip3 install .
+```
+
+## From PyPI
+```
+python3 -m pip install secretaries
 ```
 
 
@@ -67,11 +68,15 @@ If, like me, you work for a city, you might want to put all the names of streets
 ### A single, short text
 ```
 from secretaries import secretary as s
-t = s.run(text = "Joe Biden and Donald Trump are the two most recent presidents of the United States.", lang = "English")
+t = s.run("Bear Grylls once met a bear at Bear lake.", 
+          lang = "English", 
+          ambiguous = ["bear"],
+          masks = ["Bear lake"],
+          single_text_mode = True)
 print(t)
 ```
 ```
-[name] and [name] are the two most recent presidents of the United States.
+[name] once met a bear at Bear lake.
 ```
 
 ### A longer text
@@ -102,7 +107,7 @@ n tokens: 263829
 ```
 
 ```
-> cat output/names_ner.csv
+> cat output_en/names_ner.csv
    1   │ token,count
    2   │ Elizabeth,338
    3   │ Darcy,287
@@ -160,7 +165,7 @@ Du kan öka modellens precision genom att sortera ord i tre kategorier: ord som 
 Här förvarar du ord som definitivt är namn, oavsett sammanhang. Dessa ord kommer att kombineras med namn-korpuset, såvida de inte redan finns där. Den svenska modellen bygger på ett mycket stort antal namn från [Svensktext](https://github.com/peterdalle/svensktext), men ovanliga namn sorteras bort för att undvika fel (false positives). Om din text innehåller ovanliga namn kan du behöva lägga till dessa, antingen via namn-mappen eller i kod när du anropar funktionen.
 
 #### Tveksamma
-Vissa ord är tvetydiga och kan vara namn eller inte, beroende på sammanhanget. Exempel är Stig, Björn och Lotta. Eftersom dessa namn ibland är meningsbärande ord kan vi inte rutinmässigt ta bort dem baserat på stavning. Om sammanhanget däremot indikerar att de utgör namn bör vi ta bort dem. Detta är poängen med att använda Named Entity Recognition (NER). Då kan vi förhoppningsvis i värsta fall hantera meningar som "Stig mötte Björn på en stig". 
+Vissa ord är tvetydiga och kan vara namn eller inte, beroende på sammanhanget. Exempel är Stig, Björn och Lotta. Eftersom dessa namn ibland är meningsbärande ord kan vi inte rutinmässigt ta bort dem baserat på stavning. Om sammanhanget däremot indikerar att de utgör namn bör vi ta bort dem. Detta är poängen med att använda Named Entity Recognition (NER). 
 
 Om sökningen med Svensktext uppenbart har flaggat fler namn än NER, lider din data av false positives, det vill säga ord som felaktigt flaggas som namn (givet att du har använt rätt NER-modell). Gå igenom csv-filen output\_se/namn\_korpus.csv, sortera uppenbara felaktigheter i en eller flera csv-filer under mappen input\_se/tveksamma och kör därefter skriptet på nytt. Det finns också en nedre brytpunkt i form av parametern min\_n\_persons = 100. Exempel: Enligt Svensktext finns 129 förekomster av namnet Snabb, som för-, efter- eller tilltalsnamn. Ordet finns därmed i korpuset, men du vill förmodligen inte slentrianmässigt flagga det som ett namn. När du på detta vis osynliggör ett namn för korpus-ersättningen, så kommer det fortfarande plockas upp av övriga delar av skriptet (NER och Regex) om sammanhanget indikerar att det är ett namn.
 
@@ -174,12 +179,13 @@ Du kan maskera ord och fraser som inte ska ersättas. Exempelvis, i meningen "Gu
 ### En kort text
 ```
 from secretaries import secretary as s
-t = s.run(text = "Bröderna Marx hette Harpo, Groucho och Chico i förnamn.", 
+t = s.run(text = "Stig mötte Björn på en stig i skogen", 
+          ambiguous = ["stig"],
           single_text_mode = True)
 print(t)
 ```
 ```
-Bröderna [namn] hette [namn], [namn] och [namn] i förnamn.
+[namn] mötte [namn] på en stig i skogen
 ```
 
 

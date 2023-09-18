@@ -10,7 +10,7 @@ tags_default = {
         'name': 'namn',
         'names': 'namn',
         'masks': 'masker',
-        'non_names': 'tveksamma',
+        'ambiguous': 'tveksamma',
         'events': 'händelser',
         'orgs': 'organisationer',
         'locations': 'platser',
@@ -41,7 +41,7 @@ tags_default = {
         'name': 'name',
         'names': 'names',
         'masks': 'masks',
-        'non_names': 'ambiguous',
+        'ambiguous': 'ambiguous',
         'events': 'events',
         'orgs': 'orgs',
         'locations': 'locations',
@@ -72,7 +72,8 @@ tags_default = {
 gatunr = r"(?i)(gata(n)?|väg(en)?|stig(en)?|gränd(en)?|torg(et)?|esplanad(en)?|boulevard(en)?|allé(n)?|alle(n)?|plan|plats(en)?|promenad(en)?|gång(en)?|bron|kajen|hill|ängen|byn|ringen|stråket|gården|liden|backen|parken|triangeln|dockan|v\.?)(\s*\d+\s?(?:\w{1})?)([\s]?[\-&]+[\s]?\w{1})?\b"
 numrerade_klamrar = r"(?i)<+\d+>+"
 html_tecken = r"&#\d{1,5};"
-html_taggar = r"<[^<>]*>([^<>]*)</[^<>]>"
+dual_html_tags = r"<[^<>]*>([^<>]*)</[^<>]>"
+single_html_tags = r"<[^<>]*>"
 url = r"(?i)(?:https?://)?(?:www\w*)"
 mvh = "((?i)" + r"|".join([r"mvh",
                            r"Om mer information behövs",
@@ -97,7 +98,7 @@ initialer = r"|".join([
                ])
 epost = r"|".join([r"([\w\.-]+@[\w\.-]+)",
                    r"((?:[\w.-]*\s?){1,3}(?:@|\bat\b|snabela|snabel-a|snabel a)\s?(?:[\w.-]*\s?){1,2}(?:\.|punkt|dot)\s?\w{2,3})"])
-regnr = r"(\b[A-Ö]{3}\s*\d{2,3}\w?\b)"
+regnr = r"(?i)(?:\b[a-ö]{3})\s*(?:(?:\d{2}[a-ö]\b)|(?:\d{3}\b))"
 nr = r"(([0-9\.\s-]){5,20})"
 
 null_token = "[empty]"

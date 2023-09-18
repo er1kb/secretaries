@@ -1,4 +1,4 @@
-import sys
+emport sys
 import logging
 logging.disable(logging.WARNING) # disable WARNING, INFO and DEBUG logging everywhere
 import os
@@ -30,7 +30,7 @@ def run(text = [],
         corpus = True, 
         lang = 'se',
         names = list(),
-        non_names = list(),
+        ambiguous = list(),
         masks = list(),
         single_text_mode = False,
         min_n_persons = 100, 
@@ -66,7 +66,7 @@ def run(text = [],
         Which language to use (defaults to Swedish)
     names : Optional[list]
         Optional runtime list of tokens to add to the corpus as names
-    non_names : Optional[list] 
+    ambiguous : Optional[list] 
         Optional runtime list of tokens not considered names, to exclude from the corpus
     masks : Optional[list]
         Optional runtime list of single or multi token words to hide from the algorithm and thus preserve from the substitutions
@@ -117,8 +117,8 @@ def run(text = [],
 
     names = list(map(lambda x: x.lower(), names))
     # Merge safe words in function call with safe words from input folder
-    non_names = list(map(lambda x: x.lower(), non_names))
-    non_names = set(non_names).union(set(ingest(input_folder + '/' + tags[lang]['non_names'], sep = input_delimiter).select(pl.col('token')).to_series().to_list()))
+    ambiguous = list(map(lambda x: x.lower(), ambiguous))
+    ambiguous = set(ambiguous).union(set(ingest(input_folder + '/' + tags[lang]['ambiguous'], sep = input_delimiter).select(pl.col('token')).to_series().to_list()))
 
     # Make sure GPU is available
     print_status('gpu', len(tf.config.list_physical_devices('GPU')))
@@ -137,7 +137,8 @@ def run(text = [],
     # Remove HTML tags before removing brackets in general
     if remove_html: 
         df = df.with_columns(pl.col(text_column) \
-                             .str.replace_all(html_taggar, "$1"))
+                             .str.replace_all(dual_html_tags, "$1") \
+                             .str.replace_all(single_html_tags, ""))
     if preserve_linebreaks: 
         df = df.with_columns(pl.col(text_column) \
                              .str.replace_all(r"\r|\n", tags["linebreak_placeholder"]))
@@ -308,11 +309,11 @@ def run(text = [],
         names = corpus_names.union(names)
 
 
-        if lang == 'se' and not os.path.isfile(input_folder + tags[lang]['non_names'] + '/startkit_ickenamn.csv'):
+        if lang == 'se' and not os.path.isfile(input_folder + tags[lang]['ambiguous'] + '/startkit_ickenamn.csv'):
             print('Ladda ner startkit från Github')
 
 
-        names = names - non_names
+        names = names - ambiguous
 
         corpus_collect_names = partial(corpus_collect_names_, names, null_list)
         corpus_replace_names = partial(corpus_replace_names_, text_column, tags[lang])
@@ -478,6 +479,7 @@ def run(text = [],
 
 
 # TODO
+# Remove single HTML tags like <br>
 # Ange dependencies i requirements.txt
 # Vid behov: spara ner "startkit" i arbetsmapparna
 # Övrig dokumentation?
@@ -489,6 +491,7 @@ def run(text = [],
 
 
 # KLART
+# Om NER flaggar ett ord som namn så tas det bort genomgående. Förväntat beteende? jfr. "Stig mötte Björn på en stig". - Kan oavsiktligt peka ut namn. Löst - re.sub(..., count = 1)
 # Paketera startkit med ickenamn
 # Se över kommentarer och filnamn och använd ett språk
 # Dokumentera huvudfunktionens argument

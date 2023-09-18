@@ -14,19 +14,19 @@ def init_folders(wd, lang, tags):
     corpus_folder = os.path.join(wd, tags[lang]['corpus'] + '_' + lang)
     input_folder = os.path.join(wd, 'input_' + lang)
     names_folder = os.path.join(input_folder, tags[lang]['names'])
-    non_names_folder = os.path.join(input_folder, tags[lang]['non_names'])
+    ambiguous_folder = os.path.join(input_folder, tags[lang]['ambiguous'])
     masks_folder = os.path.join(input_folder, tags[lang]['masks'])
     output_folder = os.path.join(wd, 'output_' + lang)
     starter_kits = {'se': 'startkit_ickenamn_se', 
                     'en': 'starter_kit_safe_words_en'}
-    copy_starter_kit = not os.path.exists(non_names_folder)
-    folders = [corpus_folder, input_folder, output_folder, names_folder, non_names_folder, masks_folder]
+    copy_starter_kit = not os.path.exists(ambiguous_folder)
+    folders = [corpus_folder, input_folder, output_folder, names_folder, ambiguous_folder, masks_folder]
     for f in folders:
         if not os.path.exists(f):
             os.mkdir(f)
     if copy_starter_kit:
         with as_file(files('secretaries').joinpath(starter_kits[lang] + '.csv')) as starter_kit:
-            shutil.copy(starter_kit, os.path.join(non_names_folder, starter_kits[lang] + '.csv'))
+            shutil.copy(starter_kit, os.path.join(ambiguous_folder, starter_kits[lang] + '.csv'))
     return(tuple(folders))
 
 
@@ -141,7 +141,7 @@ def remove_entities_(text_column, tags, x):
         if entity['entity_group'] == "PER":  
             # remove names and trailing characters (such as genitive -s)
             pattern = re.compile("".join([r"(?i)\b", entity["word"], r"'?s?\b"]))
-            txt = pattern.sub(' ' + name_tag, txt)
+            txt = pattern.sub(' ' + name_tag, txt, count = 1)
     return(txt)
 
 def corpus_collect_names_(name_set, null_list, x):
