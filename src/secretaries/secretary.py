@@ -1,4 +1,4 @@
-emport sys
+import sys
 import logging
 logging.disable(logging.WARNING) # disable WARNING, INFO and DEBUG logging everywhere
 import os
