@@ -14,9 +14,10 @@ from transformers import pipeline, TFBertForTokenClassification, AutoTokenizer
 import tensorflow as tf
 from datetime import datetime
 from functools import partial
+from nltk.corpus import stopwords
 
 from .patterns import *
-from .utils import init_folders, border, progress, unsplit, ingest, find_masks_, find_long_masks_, mask_, remove_entities_, corpus_collect_names_, corpus_replace_names_, unmask_, insert_splits_, print_status_, load_corpus
+from .utils import init_folders, border, progress, unsplit, ingest, find_years, find_masks_, find_long_masks_, mask_, remove_entities_, corpus_collect_names_, corpus_replace_names_, unmask_, insert_splits_, print_status_, load_corpus
 
 def run(text = [], 
         csv = None, 
@@ -116,9 +117,10 @@ def run(text = [],
         os.mkdir(input_folder)
 
     names = list(map(lambda x: x.lower(), names))
+    sw = set(stopwords.words({'en': 'english', 'se': 'swedish'}[lang]))
     # Merge safe words in function call with safe words from input folder
     ambiguous = list(map(lambda x: x.lower(), ambiguous))
-    ambiguous = set(ambiguous).union(set(ingest(input_folder + '/' + tags[lang]['ambiguous'], sep = input_delimiter).select(pl.col('token')).to_series().to_list()))
+    ambiguous = set(ambiguous).union(sw).union(set(ingest(input_folder + '/' + tags[lang]['ambiguous'], sep = input_delimiter).select(pl.col('token')).to_series().to_list()))
 
     # Make sure GPU is available
     print_status('gpu', len(tf.config.list_physical_devices('GPU')))
@@ -196,6 +198,9 @@ def run(text = [],
                                      .str.extract_all(r"[a-öA-Ö]+") \
                                      .list.lengths().alias('antal_ord'))
 
+    # mask recent and coming years, so as to not remove them along with other numbers
+    # years = set(map(lambda x: str(x), range(1950, datetime.now().year + 30)))
+
     mask_set = set(masks.filter(pl.col('antal_ord') <= max_sequence_length) \
                    .select(pl.col('token')).to_series().to_list())
 
@@ -205,18 +210,21 @@ def run(text = [],
     find_masks = partial(find_masks_, mask_set, max_sequence_length, null_list, text_column)
     find_long_masks = partial(find_long_masks_, long_mask_set)
 
-
     # MASKING
     df_maskings = df.select(pl.col(id_column + "2"),
                             pl.col(text_column),
                             pl.struct([text_column, 'tokens']) \
                             .map_elements(find_masks) \
                             .alias("_masks")) \
+                    .with_columns(pl.col(text_column) \
+                                  .map_elements(find_years) \
+                                  .alias('_years')) \
                     .select(pl.col(id_column + "2"),
                             pl.col(text_column) \
                                   .map_elements(find_long_masks) \
                                   .alias('masks') \
-                                  .list.concat('_masks')) \
+                                  .list.concat('_masks') \
+                                  .list.concat('_years')) \
                     .with_columns(pl.col('masks') \
                                     .fill_null([]))
 
@@ -345,7 +353,9 @@ def run(text = [],
     # Reinsert line breaks
     if preserve_linebreaks: 
         df = df.with_columns(pl.col(text_column) \
-                             .str.replace_all(tags["linebreak_placeholder"], "\n", literal = True))
+                             .str.replace_all(f"(?:{tags['linebreak_placeholder']})|(?:{tags['linebreak_placeholder'].rstrip()})|(?:{tags['linebreak_placeholder'].lstrip()})|(?:{tags['linebreak_placeholder'].strip()})", "\n"))
+                             # Placeholder may be broken up if text has been split
+                             # .str.replace_all(tags["linebreak_placeholder"], "\n", literal = True))
 
     print_status("saving", '')
 
@@ -470,8 +480,9 @@ def run(text = [],
     print_status("elapsed", round((ts_end - ts_init).seconds / 60, 1))
 
     if single_text_mode:
-        return unsplit(df, id_column = id_column, 
-                       text_column = text_column)[text_column].to_list()[0]
+        return unsplit(df, id_column = id_column,
+                       text_column = text_column) \
+        [text_column].to_list()[0]
     else:
         return(df)
 
@@ -479,18 +490,19 @@ def run(text = [],
 
 
 # TODO
-# Remove single HTML tags like <br>
 # Ange dependencies i requirements.txt
-# Vid behov: spara ner "startkit" i arbetsmapparna
 # Övrig dokumentation?
-# Paketera paket
 # Utforma test i test-mappen
-# Fixa Readme.md-fil
-# Pusha till er1kb:s Github, därefter forka från Malmö stads
-
 
 
 # KLART
+# Pusha till er1kb:s Github, därefter forka från Malmö stads
+# Fixa Readme.md-fil
+# Paketera paket
+# Vid behov: spara ner "startkit" i arbetsmapparna
+# Maskera årtal? Fyra siffror i rad som inte föregås eller efterföljs av andra siffror. Exakt sökning från år 1950 till 30 år framåt i tiden. 
+# Platshållare för radbrytningar splittas i långa texter och hittas därmed inte - löst.
+# Ta bort enskilda html-taggar som t ex <br>
 # Om NER flaggar ett ord som namn så tas det bort genomgående. Förväntat beteende? jfr. "Stig mötte Björn på en stig". - Kan oavsiktligt peka ut namn. Löst - re.sub(..., count = 1)
 # Paketera startkit med ickenamn
 # Se över kommentarer och filnamn och använd ett språk

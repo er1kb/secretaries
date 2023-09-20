@@ -52,7 +52,6 @@ def unsplit(df, id_column, text_column):
             .groupby(id_column) \
             .agg(pl.col(text_column).str.concat(delimiter = ""))
     return(df)
-            # .with_columns(pl.col(id_column).str.replace("_\d+$", "").keep_name()) \
 
 def ingest(folder, colname = 'token', sep = ',', drop_duplicates = True, keep_other_columns = False):
     """Read a folder of csv files into a Polars dataframe"""
@@ -85,6 +84,13 @@ def ingest(folder, colname = 'token', sep = ',', drop_duplicates = True, keep_ot
     return(tokens.collect())
 
 
+def find_years(x):
+    """Find years, where not preceded or followed by other digits."""
+
+    years = list(re.findall(r"(?:(?<=\D[\s\.,])|(?<=\n|\r)|(?<=\[\.,]))(\d{4})(?:(?=[\s\.,]\D)|(?=\n|\r)|(?=[\.,]))", x))
+    return(years)
+
+
 def find_masks_(mask_set, max_sequence_length, null_list, text_column, x):
     """Find tokens to be masked."""
 
@@ -106,6 +112,7 @@ def find_masks_(mask_set, max_sequence_length, null_list, text_column, x):
     masks = sorted(masks, key = len, reverse = True)
     return(masks)
 
+
 def find_long_masks_(long_mask_set, x):
     """Find multi-word masks"""
 
@@ -113,13 +120,17 @@ def find_long_masks_(long_mask_set, x):
     long_masks = sorted(long_masks, key = len, reverse = True)
     return(long_masks)
 
-
 def mask_(text_column, x):
     """Replace masked tokens with numbered placeholders."""
 
     txt = x[text_column]
     for i,token in enumerate(x['masks']):
-        txt = re.sub(r'(?i)\b' + re.escape(token) + r'\b', '<' + str(i) + '>', txt)
+        # if year, do not mess with bigger numbers
+        # year of birth may be harmless in itself but also included in social security number
+        if bool(re.match(r"^\d{4}$", token)): 
+            txt = re.sub(r'(?i)(?:(?<=\D[\s\.,])|(?<=\n|\r)|(?<=\[\.,]))' + re.escape(token) + r'(?:(?=[\s\.,]\D)|(?=\n|\r)|(?=[\.,]))', '<' + str(i) + '>', txt)
+        else:
+            txt = re.sub(r'(?i)\b' + re.escape(token) + r'\b', '<' + str(i) + '>', txt)
     return(txt)
 
 
@@ -181,7 +192,8 @@ def insert_splits_(split_length, split_token, text):
             print(is_punctuation)
         else:
             # If no punctuation present, do not split text
-            sys.exit('No punctuations or comma in text - exiting.')
+            warnings.warn(f'No punctuations or comma in text - not splitting text (only the first {split_length} tokens will be used).')
+            return(text)
     punctuation_indices = [0] + [i for i,v in enumerate(is_punctuation) if v]
 
     # Find intervals that are smaller than the specified split_length

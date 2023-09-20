@@ -1,6 +1,6 @@
 tags_default = {
     'split_token': '[[split]]',
-    'linebreak_placeholder': ',linebreak_placeholder,',
+    'linebreak_placeholder': ' linebreak_placeholder ',
         'corpus_names': 'names_corpus',
         'regex_names': 'names_regex',
         'split': 'data_split',
@@ -88,6 +88,8 @@ mvh = "((?i)" + r"|".join([r"mvh",
                            r"Hilsen",
                            r"Regards",
                            r"Best wishes",
+                           r"Best,",
+                           r"Best /",
                            r"All the best",
                            r"All the very best",
                            ]) + r")([^\w]{1,3})([^.]*)"
@@ -99,7 +101,7 @@ initialer = r"|".join([
 epost = r"|".join([r"([\w\.-]+@[\w\.-]+)",
                    r"((?:[\w.-]*\s?){1,3}(?:@|\bat\b|snabela|snabel-a|snabel a)\s?(?:[\w.-]*\s?){1,2}(?:\.|punkt|dot)\s?\w{2,3})"])
 regnr = r"(?i)(?:\b[a-ö]{3})\s*(?:(?:\d{2}[a-ö]\b)|(?:\d{3}\b))"
-nr = r"(([0-9\.\s-]){5,20})"
+nr = r"[0-9\.\s-]{5,20}"
 
 null_token = "[empty]"
 null_list = [null_token]
