@@ -7,7 +7,7 @@ packages = ["src/secretaries"]
 
 [project]
 name = "secretaries"
-version = "0.0.1.6"
+version = "0.0.1.7"
 license = "MIT"
 authors = [
   { name="Erik Broman", email="mikroberna@gmail.com" },
@@ -18,7 +18,9 @@ requires-python = ">=3.9"
 dependencies = [
   'Polars >= 0.19.2',
   'Transformers >= 4.33.1',
-  'Tensorflow >= 2.13.0'
+  'torch >= 1.13.1',
+  'NLTK >= 3.8.1',
+  'importlib-resources >= 6.1.0'
 ]
 keywords = ['python', 'gdpr', 'anonymization', 'personal data', 'personuppgifter']
 classifiers = [

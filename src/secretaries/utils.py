@@ -192,8 +192,8 @@ def insert_splits_(split_length, split_token, text):
             print(is_punctuation)
         else:
             # If no punctuation present, do not split text
-            warnings.warn(f'No punctuations or comma in text - not splitting text (only the first {split_length} tokens will be used).')
-            return(text)
+            warnings.warn('No punctuation or comma in text - cannot split accordingly. Put some dots or commas in there and re-run the code. Exiting.')
+            sys.exit(1)
     punctuation_indices = [0] + [i for i,v in enumerate(is_punctuation) if v]
 
     # Find intervals that are smaller than the specified split_length

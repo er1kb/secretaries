@@ -10,14 +10,20 @@ import polars as pl
 import re
 import warnings
 # import urllib.request
-from transformers import pipeline, TFBertForTokenClassification, AutoTokenizer
-import tensorflow as tf
+from transformers import pipeline, AutoTokenizer
+from torch import cuda
 from datetime import datetime
 from functools import partial
-from nltk.corpus import stopwords
 
 from .patterns import *
 from .utils import init_folders, border, progress, unsplit, ingest, find_years, find_masks_, find_long_masks_, mask_, remove_entities_, corpus_collect_names_, corpus_replace_names_, unmask_, insert_splits_, print_status_, load_corpus
+
+try:
+    from nltk.corpus import stopwords
+except LookupError: 
+    import nltk
+    nltk.download('stopwords')
+    from nltk.corpus import stopwords
 
 def run(text = [], 
         csv = None, 
@@ -123,7 +129,7 @@ def run(text = [],
     ambiguous = set(ambiguous).union(sw).union(set(ingest(input_folder + '/' + tags[lang]['ambiguous'], sep = input_delimiter).select(pl.col('token')).to_series().to_list()))
 
     # Make sure GPU is available
-    print_status('gpu', len(tf.config.list_physical_devices('GPU')))
+    print_status('gpu', cuda.device_count())
 
     ts_init = datetime.now()
     print_status('started', ts_init.strftime("%H:%M:%S"))
@@ -238,8 +244,8 @@ def run(text = [],
     # NAMED ENTITY RECOGNITION
     remove_entities = partial(remove_entities_, text_column, tags[lang])
     if ner:
-        model = TFBertForTokenClassification.from_pretrained(model_name)
-        nlp = pipeline('ner', model=model, tokenizer=AutoTokenizer.from_pretrained(model_name, model_max_length=512), aggregation_strategy='max') 
+        tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512)
+        nlp = pipeline('ner', model=model_name, tokenizer=tokenizer, aggregation_strategy='max') 
 
         texter = df.select(pl.col(text_column).fill_null(pl.lit(null_token))) \
                            .to_series().to_list()
@@ -355,7 +361,6 @@ def run(text = [],
         df = df.with_columns(pl.col(text_column) \
                              .str.replace_all(f"(?:{tags['linebreak_placeholder']})|(?:{tags['linebreak_placeholder'].rstrip()})|(?:{tags['linebreak_placeholder'].lstrip()})|(?:{tags['linebreak_placeholder'].strip()})", "\n"))
                              # Placeholder may be broken up if text has been split
-                             # .str.replace_all(tags["linebreak_placeholder"], "\n", literal = True))
 
     print_status("saving", '')
 
@@ -490,6 +495,7 @@ def run(text = [],
 
 
 # TODO
+# Möjliggör att inte skriva filer
 # Ange dependencies i requirements.txt
 # Övrig dokumentation?
 # Utforma test i test-mappen
