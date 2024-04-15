@@ -40,6 +40,7 @@ def run(text = [],
         ambiguous = list(),
         masks = list(),
         single_text_mode = False,
+        strict = True,
         min_n_persons = 100, 
         max_sequence_length = 3, 
         remove_html = True,
@@ -79,6 +80,8 @@ def run(text = [],
         Optional runtime list of single or multi token words to hide from the algorithm and thus preserve from the substitutions
     single_text_mode : Optional[bool]
         Optionally return a single text. May be useful for setting up an api. 
+    strict : Optional[bool]
+        If True, disallow the splitting of text mid-sentence, when two adjacent punctuation marks are further apart than the 512 max token length of BERT models. Set to False as needed, when there is not enough punctuation in your text.
     min_n_persons : Optional[int]
         An optional frequency threshold for corpus tokens. At present only available in Swedish. Defaults to 100. 
     max_sequence_length : Optional[int] 
@@ -154,7 +157,7 @@ def run(text = [],
     # Pre-processing in eager mode:
     # Split text into parts of at most 512 tokens (the BERT model word limit)
     # NB: punctuation also counts as tokens
-    insert_splits = partial(insert_splits_, 512, tags["split_token"])
+    insert_splits = partial(insert_splits_, 512, tags["split_token"], strict)
     df = df.collect() \
         .with_columns(pl.col(text_column).map_elements(insert_splits).keep_name()) \
         .with_columns(pl.col(text_column).str.split(tags["split_token"]).keep_name()) \

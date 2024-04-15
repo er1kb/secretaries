@@ -173,7 +173,7 @@ def corpus_replace_names_(text_column, tags, x):
         txt = re.sub(r'(?i)\b' + re.escape(token) + r'\b', name_tag, txt)
     return txt
 
-def insert_splits_(split_length, split_token, text):
+def insert_splits_(split_length, split_token, strict, text):
     """Splits a text into chunks of at most split_length tokens. Useful for constraints like the 512 word limit of BERT models."""
 
     tokens = re.split(pattern = r'\b', string = text)
@@ -185,15 +185,18 @@ def insert_splits_(split_length, split_token, text):
     if not any(is_punctuation):
         # If no [?.!] present, split by comma.
         is_comma = list(map(bool, [re.search(r"^,+\s?", t) for t in tokens]))
-        print(sum(is_comma))
         if any(is_comma):
             is_punctuation = is_comma
             warnings.warn('No punctuations in text, splitting by comma instead.')
-            print(is_punctuation)
         else:
-            # If no punctuation present, do not split text
-            warnings.warn('No punctuation or comma in text - cannot split accordingly. Put some dots or commas in there and re-run the code. Exiting.')
-            sys.exit(1)
+            # If no punctuation present, split mid-sentence and throw warning
+            if strict:
+                warnings.warn(f'No punctuation or comma in text - cannot split accordingly. To bypass, re-run the command using strict = False! Exiting. Problematic text: \n\n {text}')
+                sys.exit(1)
+            else: 
+                warnings.warn(f'No punctuation or comma in text - splitting mid-sentence. Problematic text: \n\n {text} \n\n')
+                is_punctuation = [i % split_length == 0 for i in range(1, len(tokens))]
+
     punctuation_indices = [0] + [i for i,v in enumerate(is_punctuation) if v]
 
     # Find intervals that are smaller than the specified split_length
@@ -204,14 +207,19 @@ def insert_splits_(split_length, split_token, text):
         # print('target: ' + str(target))
         checkpoints = [i - target for i in punctuation_indices]
         closest_index = len(list(filter(lambda x: x <= 0, checkpoints))) - 1
-        # print('closest_index: ' + str(closest_index) + ' >> ' + str(punctuation_indices[closest_index]))
-        split_indices.append(punctuation_indices[closest_index])
-        # print('difference at closest_index: ' + str(target - punctuation_indices[closest_index]))
+        # If there is a punctuation gap, larger than split_length
         if closest_index == previous_index:
-            sys.exit('Loop failed. Cannot split the text, since two adjacent punctuations are more than split_length tokens apart. Increase the split_length parameter. ')
-        else:
-            target += split_length - (target - punctuation_indices[closest_index])
-        # print('split_indices: ' + str(split_indices))
+            # If strict, do not split mid-sentence
+            if strict:
+                sys.exit(f'Loop failed. Cannot split the text, since two adjacent punctuations are more than split_length tokens apart. To bypass, re-run the command with strict = False! Problematic text: \n\n {text} \n\n ')
+            # If not strict, insert a new checkpoint mid-sentence and continue
+            else:
+                punctuation_indices.append(punctuation_indices[previous_index] + split_length)
+                punctuation_indices.sort()
+                closest_index += 1
+        target += split_length - (target - punctuation_indices[closest_index])
+
+        split_indices.append(punctuation_indices[closest_index])
         previous_index = closest_index
 
     # Insert split token after punctuation at the computed indices, 

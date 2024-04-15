@@ -7,7 +7,7 @@ packages = ["src/secretaries"]
 
 [project]
 name = "secretaries"
-version = "0.0.1.7"
+version = "0.0.1.8"
 license = "MIT"
 authors = [
   { name="Erik Broman", email="mikroberna@gmail.com" },
@@ -34,5 +34,5 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/er1kb/secretary"
-"Bug Tracker" = "https://github.com/er1kb/secretary/issues"
+"Homepage" = "https://github.com/er1kb/secretaries"
+"Bug Tracker" = "https://github.com/er1kb/secretaries/issues"
