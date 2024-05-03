@@ -487,79 +487,13 @@ def run(text = [],
     print_status('ended', ts_end.strftime("%H:%M:%S"))
     print_status("elapsed", round((ts_end - ts_init).seconds / 60, 1))
 
+    # Concatenate split texts to preserve the original length and order
+    df = unsplit(df, id_column = id_column,
+                       text_column = text_column)
+
     if single_text_mode:
-        return unsplit(df, id_column = id_column,
-                       text_column = text_column) \
-        [text_column].to_list()[0]
+        return df[text_column].to_list()[0]
     else:
-        return(df)
-
-
-
-
-# TODO
-# Möjliggör att inte skriva filer
-# Ange dependencies i requirements.txt
-# Övrig dokumentation?
-# Utforma test i test-mappen
-
-
-# KLART
-# Pusha till er1kb:s Github, därefter forka från Malmö stads
-# Fixa Readme.md-fil
-# Paketera paket
-# Vid behov: spara ner "startkit" i arbetsmapparna
-# Maskera årtal? Fyra siffror i rad som inte föregås eller efterföljs av andra siffror. Exakt sökning från år 1950 till 30 år framåt i tiden. 
-# Platshållare för radbrytningar splittas i långa texter och hittas därmed inte - löst.
-# Ta bort enskilda html-taggar som t ex <br>
-# Om NER flaggar ett ord som namn så tas det bort genomgående. Förväntat beteende? jfr. "Stig mötte Björn på en stig". - Kan oavsiktligt peka ut namn. Löst - re.sub(..., count = 1)
-# Paketera startkit med ickenamn
-# Se över kommentarer och filnamn och använd ett språk
-# Dokumentera huvudfunktionens argument
-# Uppdatera till Python 3.9
-# Kolla filers existens? - Detta görs redan när korpuset laddas, i övrigt inga obligatoriska filer
-# "Peter" maskeras men hamnar ändå under output_se/namn_corpus.csv... Löst: skapar tokens på nytt efter maskering.
-# Fixa hjälpfunktion som i tur och ordning går igenom nödvändiga mappar (uppdelat på språk) och skapar vid behov
-# Skriv bara maskerade om ord har maskerats, dvs tabellen inte är tom. Nej - skriv fil oavsett. 
-# Separera input-mapp (input_se, input_en) + parameterisera mappnamnen + korpus på svenska
-# Möjliggör att specificera egna taggar. Separera taggar och övriga inställningar/meningar, så att användaren inte kan mixtra med de senare. Struntar i denna... 
-# Flytta ut inläsning av corpus till extern hjälpfunktion
-# Dubbelkolla hur dubbelnamn hanteras (Sven-Erik etc.)
-# Separera output-mappar (output_se, output_en)
-# Se över användandet av platshållare (null_token, null_list)
-# Ge återkoppling på svenska eller engelska
-# Svenska eller engelska taggar
-# Ladda bara ner relevanta filer från Svensktext, inte hela korpuset
-# Spara engelskt namnkorpus lokalt
-# Ta bort null_token/null_list från corpus_names
-# linebreak_placeholder hamnar i regex_names.csv - möjligt att undvika?  
-# Möjliggör att mata in namn, icke-namn och maskeringar som argument till funktionen, för att kunna mata in detta manuellt i textrutor i ett webbgränssnitt. Sammanfoga dessa extra inmatningar med underlaget i mapparna (a.union(b))
-# Fixa att maskeringar i början eller slutet av texten räknas mångdubbelt
-# Dubbelkolla om det blir flera hälsningar per text och i så fall om kolumnen är i rätt format (list(str) istället för str) - names_from_regex behöver skapas med str.extract_all istället för str.extract nu när en text kan innehålla flera hälsningsfraser
-# Ge möjlighet att specificera namn under input/names, så att engelskspråkiga användare kan bygga ett eget korpus. Icke-namn trumfar namn om samma ord förekommer i båda mängderna. 
-# Fixa fel där df_corpus blir tomt och programmet får panik, dvs garantera att df_corpus inte är tom om inget namn hittas i korpuset
-# Om en lång text analyseras - fixa så att hälsningsfraser inte tar bort resten av texten, dvs byt ut (.*$) i hälsnings-regex
-# Sätt argument för språk (svenska/engelska)
-# Fixa gatunr (ersättning gjordes men resultatet sparades inte)
-# single_text_mode - spara ingen data utan returnera en enskild text
-# Ge möjlighet att välja bort ner och corpus (t ex för felsökning eller ingen gpu tillgänglig)
-# Fixa genitiv-s - Adolf flaggas men inte Adolfs
-# Ge användaren möjlighet att välja separator för csv-filer, både för data och underlag
-# Ge möjlighet att ta bort eller bevara radbrytningar
-# Splitta texter i delar om max 512 ord
-# Sortera korrekt på ID-kolumn innan data sparas, om ID är heltal
-# Använd paket för att göra line wrap på text
-
-# SKIPPAT
-# Ta bort krav på kolumnhuvudet "token" i csv-filer?
-# Ev. lägga alla parametrar i en toml-fil? 
-# Ev. lägga till smeknamn
-
-# Små bokstäver i mest_flaggade, för att undvika en massa dubbletter.
-# Does not remove initials after brackets: "Finns också på [epost]  eb" 
-# The cased bert model does not identify lowercase names as such
-# --> Use SpaCy to pick up "proper nouns" (PROPN) which have not been flagged as people or locations?! 
-# www addresses?! 
-# Obfuscate gendered pronouns? 
+        return df
 
 

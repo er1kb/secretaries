@@ -49,7 +49,7 @@ def print_status_(tags, string_id, replacement):
 
 def unsplit(df, id_column, text_column):
     df = df.select([id_column, id_column + "2", 'sub_id', text_column]) \
-            .groupby(id_column) \
+            .group_by(id_column) \
             .agg(pl.col(text_column).str.concat(delimiter = ""))
     return(df)
 
@@ -256,7 +256,7 @@ def load_corpus(corpus_path, lang, min_n_persons):
             svensktext.write_csv(os.path.join(corpus_path, 'svensktext.csv'))
             # Read Corpus. Sum the number of people over multiple occurrences, since the same token can be used as a forename or a surname. 
         svensktext = svensktext \
-            .groupby('name').agg(pl.col('persons').sum()) \
+            .group_by('name').agg(pl.col('persons').sum()) \
             .filter(pl.col('persons') >= min_n_persons) \
             .with_columns(pl.col('name').str.to_lowercase())
 
