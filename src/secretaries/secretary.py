@@ -126,6 +126,7 @@ def run(text = [],
         os.mkdir(input_folder)
 
     names = list(map(lambda x: x.lower(), names))
+
     sw = set(stopwords.words({'en': 'english', 'se': 'swedish'}[lang]))
     # Merge safe words in function call with safe words from input folder
     ambiguous = list(map(lambda x: x.lower(), ambiguous))
@@ -197,15 +198,16 @@ def run(text = [],
     print_status('data_size', nrows)
 
     masks = pl.DataFrame({'token': masks}).select(pl.col('token').cast(pl.Utf8).str.to_lowercase())
+
     masks = ingest(input_folder + '/' + tags[lang]['masks'], sep = input_delimiter) \
-                        .with_columns(pl.col('token').cast(pl.Utf8)) \
+                        .select(pl.col('token').cast(pl.Utf8)) \
                         .vstack(masks) \
-                        .with_columns(pl.col('token') \
-                                     .str.to_lowercase()) \
+                        .select(pl.col('token') \
+                                  .str.to_lowercase()) \
                         .unique(subset = ['token']) \
                         .with_columns(pl.col('token') \
-                                     .str.extract_all(r"[a-öA-Ö]+") \
-                                     .list.lengths().alias('antal_ord'))
+                                        .str.extract_all(r"[a-öA-Ö]+") \
+                                        .list.lengths().alias('antal_ord'))
 
     # mask recent and coming years, so as to not remove them along with other numbers
     # years = set(map(lambda x: str(x), range(1950, datetime.now().year + 30)))
@@ -255,19 +257,20 @@ def run(text = [],
 
         ner_values = nlp(texter)
 
-
         null_entity = {'entity_group': '', 'score': 0, 'word': '', 'start': 0, 'end': 0}
         ner_values = [x if (len(x) > 0) else [null_entity] for x in ner_values]
 
-        df_entities = df.select(pl.col(id_column + "2"),
-                                pl.Series(name = 'entities', values = ner_values) \
-                                    .fill_null([]))
     else:
         # DeprecationWarning: https://github.com/pola-rs/polars/pull/10461
         # with warnings.catch_warnings():
         #     warnings.simplefilter('ignore')
-        df_entities = df.select(pl.col(id_column + "2"),
-                                pl.lit([[]]).alias('entities'))
+        # df_entities = df.select(pl.col(id_column + "2"),
+        #                         pl.lit([[]]).alias('entities'))
+        ner_values = [[] for _ in range(df.shape[0])]
+
+    df_entities = df.select(pl.col(id_column + "2"),
+                            pl.Series(name = 'entities', values = ner_values) \
+                                .fill_null([]))
 
     ts_nerlookup = datetime.now()
     print_status("found_entities", ts_nerlookup.strftime("%H:%M:%S"))
@@ -284,12 +287,14 @@ def run(text = [],
             .with_columns(pl.col('masks').fill_null([]),
                           pl.col('entities').fill_null([])) \
                     .with_columns(pl.struct([text_column, "masks"]) \
-                                    .map_elements(mask).alias(text_column)) \
+                                    .map_elements(mask, return_dtype = pl.Utf8) \
+                                    .alias(text_column)) \
                     .with_columns(pl.col(text_column) \
                                     .str.extract_all(r'\b[a-öA-Ö]+\b') \
                                     .fill_null(null_list).alias('tokens')) \
                     .with_columns(pl.struct([text_column, "entities"]) \
-                                    .map_elements(remove_entities).alias(text_column))
+                                    .map_elements(remove_entities, return_dtype = pl.Utf8) \
+                                    .alias(text_column))
 
 
     ts_sub = datetime.now()
@@ -325,8 +330,7 @@ def run(text = [],
         print_status('corpus_count', n_unique_corpus)
         names = corpus_names.union(names)
 
-
-        if lang == 'se' and not os.path.isfile(input_folder + tags[lang]['ambiguous'] + '/startkit_ickenamn.csv'):
+        if lang == 'se' and not os.path.isfile(input_folder + tags[lang]['ambiguous'] + '/startkit_ickenamn_se.csv'):
             print('Ladda ner startkit från Github')
 
 
@@ -336,10 +340,13 @@ def run(text = [],
         corpus_replace_names = partial(corpus_replace_names_, text_column, tags[lang])
 
         df = df.with_columns(pl.col("tokens") \
-                             .map_elements(corpus_collect_names) \
+                             .map_elements(corpus_collect_names, 
+                                           return_dtype = pl.List(pl.Utf8)) \
                              .alias("names_from_corpus")) \
                .with_columns(pl.struct([text_column, 'names_from_corpus']) \
-                                .map_elements(corpus_replace_names))
+                                .map_elements(corpus_replace_names, 
+                                              return_dtype = pl.Utf8) \
+                             .alias(text_column))
 
         ts_corpussub = datetime.now()
         print_status("replaced_corpus", ts_corpussub.strftime("%H:%M:%S"))
@@ -365,14 +372,17 @@ def run(text = [],
                              .str.replace_all(f"(?:{tags['linebreak_placeholder']})|(?:{tags['linebreak_placeholder'].rstrip()})|(?:{tags['linebreak_placeholder'].lstrip()})|(?:{tags['linebreak_placeholder'].strip()})", "\n"))
                              # Placeholder may be broken up if text has been split
 
+    # Remove null value placeholders in text column.
+    df = df.with_columns(pl.col(text_column).str.replace(rf'^{re.escape(null_token)}$', '').keep_name()) \
+
     print_status("saving", '')
 
     df_out = df.lazy() \
           .select(pl.col(initial_colnames)) \
-          .with_columns(pl.when(pl.col(text_column) == null_token) \
-                          .then(pl.lit("")) \
-                          .otherwise(pl.col(text_column)).keep_name()) \
                           .sort(id_column + "2")
+          # .with_columns(pl.when(pl.col(text_column) == null_token) \
+          #                 .then(pl.lit("")) \
+          #                 .otherwise(pl.col(text_column)).alias(text_column)) \
 
     if id_column_as_int:
         df_out = df_out.with_columns(pl.col(id_column).cast(pl.Int32))
