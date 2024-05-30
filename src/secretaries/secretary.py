@@ -160,7 +160,8 @@ def run(text = [],
     # NB: punctuation also counts as tokens
     insert_splits = partial(insert_splits_, 512, tags["split_token"], strict)
     df = df.collect() \
-        .with_columns(pl.col(text_column).map_elements(insert_splits).keep_name()) \
+        .with_columns(pl.col(text_column).map_elements(insert_splits, 
+                                                       return_dtype = pl.Utf8).keep_name()) \
         .with_columns(pl.col(text_column).str.split(tags["split_token"]).keep_name()) \
         .with_columns(pl.col(text_column).list.lengths().alias('n_splits')) \
         .lazy()
@@ -225,14 +226,17 @@ def run(text = [],
     df_maskings = df.select(pl.col(id_column + "2"),
                             pl.col(text_column),
                             pl.struct([text_column, 'tokens']) \
-                            .map_elements(find_masks) \
+                            .map_elements(find_masks,
+                                          return_dtype = pl.List(pl.Utf8)) \
                             .alias("_masks")) \
                     .with_columns(pl.col(text_column) \
-                                  .map_elements(find_years) \
+                                  .map_elements(find_years,
+                                                return_dtype = pl.List(pl.Utf8)) \
                                   .alias('_years')) \
                     .select(pl.col(id_column + "2"),
                             pl.col(text_column) \
-                                  .map_elements(find_long_masks) \
+                                  .map_elements(find_long_masks, 
+                                                return_dtype = pl.List(pl.Utf8)) \
                                   .alias('masks') \
                                   .list.concat('_masks') \
                                   .list.concat('_years')) \
@@ -360,11 +364,12 @@ def run(text = [],
     unmask = partial(unmask_, text_column)
 
     df = df.with_columns(pl.struct(["masks", text_column]) \
-                         .map_elements(unmask).alias(text_column))
+                         .map_elements(unmask, return_dtype = pl.Utf8).alias(text_column))
 
     # Remove null value placeholders.
     df = df.with_columns(pl.col(['masks','names_from_corpus']) \
-                         .map_elements(lambda l: [x for x in l if x != null_token]))
+                         .map_elements(lambda l: [x for x in l if x != null_token],
+                                       return_dtype = pl.List(pl.Utf8)))
 
     # Reinsert line breaks
     if preserve_linebreaks: 
