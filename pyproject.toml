@@ -7,7 +7,7 @@ packages = ["src/secretaries"]
 
 [project]
 name = "secretaries"
-version = "0.0.1.11"
+version = "0.0.1.12"
 license = "MIT"
 authors = [
   { name="Erik Broman", email="mikroberna@gmail.com" },

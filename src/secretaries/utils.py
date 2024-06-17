@@ -113,10 +113,12 @@ def find_masks_(mask_set, max_sequence_length, null_list, text_column, x):
     return(masks)
 
 
-def find_long_masks_(long_mask_set, x):
+def find_long_masks_(long_mask_set, null_list, x):
     """Find multi-word masks"""
 
     long_masks = [token for token in long_mask_set if token in x]
+    if len(long_masks) == 0:
+        return null_list
     long_masks = sorted(long_masks, key = len, reverse = True)
     return(long_masks)
 
@@ -170,7 +172,7 @@ def corpus_replace_names_(text_column, tags, x):
     txt = x[text_column]
     name_tag = '[ ' + tags['name'] + ' ]'
     for token in x['names_from_corpus']:
-        txt = re.sub(r'(?i)\b' + re.escape(token) + r'\b', name_tag, txt)
+        txt = re.sub(r'(?i)\b' + re.escape(token) + r'(?![\r\n]+)' + r'\b', name_tag, txt)
     return txt
 
 def insert_splits_(split_length, split_token, strict, text):

@@ -220,7 +220,7 @@ def run(text = [],
                    .select(pl.col('token')).to_series().to_list())
 
     find_masks = partial(find_masks_, mask_set, max_sequence_length, null_list, text_column)
-    find_long_masks = partial(find_long_masks_, long_mask_set)
+    find_long_masks = partial(find_long_masks_, long_mask_set, null_list)
 
     # MASKING
     df_maskings = df.select(pl.col(id_column + "2"),
