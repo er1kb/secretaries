@@ -84,11 +84,13 @@ def ingest(folder, colname = 'token', sep = ',', drop_duplicates = True, keep_ot
     return(tokens.collect())
 
 
-def find_years(x):
+def find_years_(null_list, x):
     """Find years, where not preceded or followed by other digits."""
 
     years = list(re.findall(r"(?:(?<=\D[\s\.,])|(?<=\n|\r)|(?<=\[\.,]))(\d{4})(?:(?=[\s\.,]\D)|(?=\n|\r)|(?=[\.,]))", x))
-    return(years)
+    if len(years) > 0:
+        return(years)
+    return null_list
 
 
 def find_masks_(mask_set, max_sequence_length, null_list, text_column, x):

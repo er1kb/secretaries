@@ -16,7 +16,7 @@ from datetime import datetime
 from functools import partial
 
 from .patterns import *
-from .utils import init_folders, border, progress, unsplit, ingest, find_years, find_masks_, find_long_masks_, mask_, remove_entities_, corpus_collect_names_, corpus_replace_names_, unmask_, insert_splits_, print_status_, load_corpus
+from .utils import init_folders, border, progress, unsplit, ingest, find_years_, find_masks_, find_long_masks_, mask_, remove_entities_, corpus_collect_names_, corpus_replace_names_, unmask_, insert_splits_, print_status_, load_corpus
 
 try:
     from nltk.corpus import stopwords
@@ -221,6 +221,7 @@ def run(text = [],
 
     find_masks = partial(find_masks_, mask_set, max_sequence_length, null_list, text_column)
     find_long_masks = partial(find_long_masks_, long_mask_set, null_list)
+    find_years = partial(find_years_, null_list)
 
     # MASKING
     df_maskings = df.select(pl.col(id_column + "2"),
@@ -366,9 +367,12 @@ def run(text = [],
     df = df.with_columns(pl.struct(["masks", text_column]) \
                          .map_elements(unmask, return_dtype = pl.Utf8).alias(text_column))
 
+    print(df["masks"])
+    print(df["names_from_corpus"])
+
     # Remove null value placeholders.
     df = df.with_columns(pl.col(['masks','names_from_corpus']) \
-                         .map_elements(lambda l: [x for x in l if x != null_token],
+                         .map_elements(lambda l: [x if x != null_token else "" for x in l],
                                        return_dtype = pl.List(pl.Utf8)))
 
     # Reinsert line breaks
